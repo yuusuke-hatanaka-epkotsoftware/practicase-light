@@ -1,0 +1,356 @@
+# 導入からチュートリアル2完了までの手順書
+
+この文書は、PractiCase を手元に用意してから、`T-000`、`tutorial`、`tutorial-2` を終えるまでの一本道です。
+印刷するか、ブラウザの別ウィンドウで開いたまま進めてください。
+
+同じ内容の `docs/00_はじめに/start-to-tutorial-guide.html` をブラウザで開くと、印刷または PDF 保存しやすい形で読めます。
+
+## 完了の定義
+
+この手順書を終えた時点で、次の状態になっていれば導入完了です。
+
+| 項目 | 完了状態 |
+|---|---|
+| 環境 | `docker compose --profile redmine up -d` でアプリ・PCP・Redmineが起動している |
+| DB | `docker compose exec app php tools/init-db.php` を実行済み |
+| Redmine | bootstrapとこの版の全課題(Master 65件 / Light 33件)のseedが完了し、学習者でログインできる |
+| T-000 | `check T-000` がPASS、完了報告が`reports/`にあり、RedmineのチケットがClosed |
+| tutorial | `check tutorial` がPASS、3行報告が`reports/`にあり、RedmineのチケットがClosed |
+| tutorial-2 | `check tutorial-2` がPASS、3行報告が`reports/`にあり、RedmineのチケットがClosed |
+| 次の一歩 | `packs/php/tickets/02_開発の基礎/T-001_job_validation/ticket.md` を開ける状態 |
+
+## 0. 使う場所を決める
+
+作業は、必ず自分のコピーで行います。配布元や master 原本で課題を解かないでください。
+
+GitHubを使う場合は、次の順で自分用リポジトリを作ります。
+
+1. ブラウザで、この教材の配布元GitHubリポジトリを開く
+2. **Use this template → Create a new repository**を選ぶ
+3. Ownerに自分のアカウント、Repository nameに任意の名前を指定し、
+   **Create repository**を押す
+4. 作成された自分用リポジトリをcloneする
+
+```text
+git clone https://github.com/<自分のアカウント>/<リポジトリ名>.git
+cd <リポジトリ名>
+```
+
+GitHub を使えない場合だけ、ZIP を展開してローカルリポジトリ化します。
+
+```text
+git init -b main
+git add .
+git commit -m "T-000: セットアップ開始"
+```
+
+## 1. VS Code でリポジトリの一番上を開く
+
+VS Code の「ファイル → フォルダーを開く」で、`README.md` と `docker-compose.yml` がある階層を開きます。
+
+下位フォルダだけを開くと、`docs/` や `packs/php/tickets/` が検索範囲外になり、手順どおりに進められません。
+
+ファイルを探すときは、基本的に **Ctrl+P → ファイル名** で開きます。
+
+## 2. 任意でチューター拡張を入れる
+
+チューター拡張は任意です。入れなくてもすべての課題は完走できます。
+
+入れる場合:
+
+1. VS Code で `Ctrl+Shift+P`
+2. `Extensions: Install from VSIX` を選ぶ
+3. `extensions/practicase-tutor/` フォルダにある `.vsix` ファイルを選ぶ
+4. `Ctrl+Shift+P` → `Reload Window`
+
+入れ終えると、VS Code にチュートリアル用の案内が表示されます。
+この拡張はローカル完結で、外部通信はしません。
+
+## 3. アプリを起動する
+
+ターミナルを開き、リポジトリの一番上で実行します。
+
+```text
+docker compose --profile redmine up -d
+docker compose exec app php tools/init-db.php
+```
+
+Redmineの初期設定と、この版に含まれる全課題の投入を行います。どちらも再実行できます。
+
+PowerShell:
+
+```powershell
+Get-Content -Raw tools/redmine/bootstrap.rb | docker compose --profile redmine exec -T redmine sh -c 'SECRET_KEY_BASE="$REDMINE_SECRET_KEY_BASE" bin/rails runner -'
+docker compose exec -T app php tools/redmine-seed.php --ticket-root=packs/php/tickets --all
+```
+
+Git Bash:
+
+```bash
+docker compose --profile redmine exec -T redmine sh -c 'SECRET_KEY_BASE="$REDMINE_SECRET_KEY_BASE" bin/rails runner -' < tools/redmine/bootstrap.rb
+docker compose exec -T app php tools/redmine-seed.php --ticket-root=packs/php/tickets --all
+```
+
+ブラウザで次を開きます。
+
+```text
+http://localhost:8180/login.php
+```
+
+`docs/03_参考資料/world.md` の利用者名簿にあるアカウントでログインできれば起動成功です。
+
+例:
+
+```text
+kiryu@example.com / password123
+```
+
+ポートを変えた場合は、自分の番号に読み替えます。
+
+```text
+http://localhost:8280/login.php
+```
+
+続いてRedmineを開き、教材専用の学習者アカウントでログインします。
+
+```text
+http://127.0.0.1:8280
+practicase / practicase123
+```
+
+RedmineのPractiCaseプロジェクトに、この版の全課題がチケットとして表示されれば準備完了です。
+Redmineの画面やAPIでは、チケットを英語で`issue`と表記することがあります。
+
+## 4. check コマンドを確認する
+
+ターミナルで実行します。
+
+```text
+docker compose exec app php tools/check.php
+```
+
+課題一覧が出れば、チェックツールは動いています。
+
+以後、文中の `check tutorial` は次の意味です。
+
+```text
+docker compose exec app php tools/check.php tutorial
+```
+
+## 5. T-000 を完了する
+
+開くファイル:
+
+```text
+packs/php/tickets/00_はじめに/T-000_setup/ticket.md
+```
+
+やること:
+
+1. Redmineで`PractiCase Ticket ID`が`T-000`のチケットを開き、自分を担当者にして
+   **New → In Progress**にし、見積をコメントして送信する
+2. VS Codeへ戻り、RedmineのURL末尾にあるチケット番号を使ってbranchを作る
+
+   ```text
+   git switch main
+   git status --short
+   git switch -c feature/redmine-<チケット番号>-T-000-setup
+   ```
+
+3. 起動確認を行う
+4. `docs/templates/setup_report.md`を`reports/T-000_setup_report.md`へコピーして、完了報告を書く
+5. checkを実行する
+
+```text
+docker compose exec app php tools/check.php T-000
+```
+
+`結果: PASS`になったら、報告をcommitし、mainへローカルmergeします。
+
+```text
+git add reports/T-000_setup_report.md
+git commit -m "T-000: セットアップ完了を報告"
+git switch main
+git merge --no-ff --no-edit feature/redmine-<チケット番号>-T-000-setup
+git branch -d feature/redmine-<チケット番号>-T-000-setup
+git status --short
+```
+
+最後にRedmineへ戻り、チケットへ`check T-000: PASS`と報告ファイル名をコメントして送信し、
+**In Progress → Resolved → Closed**にします。
+
+ここまでで環境構築は完了です。
+
+## 6. tutorial を始める
+
+開くファイル:
+
+```text
+packs/php/tickets/01_チュートリアル/tutorial/ticket.md
+```
+
+この課題は、1語だけ直して「着手 → branch → 見る → 探す → 直す → check → 報告 → commit → merge → Closed」の1周目を練習します。
+
+Redmineで`PractiCase Ticket ID`が`tutorial`のチケットを開き、自分を担当者にして
+**New → In Progress**にします。作業前の見積をコメントへ書いて送信します。
+
+送信したらVS Codeへ戻り、RedmineのURL末尾にあるチケット番号を使ってbranchを作ります。
+URLが`/issues/12`なら、チケット番号は`12`です。
+
+```text
+git switch main
+git status --short
+git switch -c feature/redmine-<チケット番号>-tutorial-label
+```
+
+まずブラウザで次を開きます。
+
+```text
+http://localhost:8180/login.php?tutorial=1
+```
+
+画面の案内に従い、ログイン、案件一覧、案件詳細へ進みます。
+明るく表示されている行の項目名を見て、一覧と違う言葉を見つけます。
+
+VS Code では **Ctrl+Shift+F** を使い、画面に出ている誤った言葉を検索します。
+
+検索結果は2箇所出ます。
+
+| 種類 | 役割 |
+|---|---|
+| `public/projects/show.php` | 直す画面 |
+| `tests/checks/tutorial.php` | 合格条件 |
+
+直すのは画面の方です。
+
+修正後、check を実行します。
+
+```text
+docker compose exec app php tools/check.php tutorial
+```
+
+PASS したら、`reports/tutorial_fix_report.md` を作り、3行で報告します。
+
+```text
+何が起きていたか:
+どこをどう直したか:
+check の結果:
+```
+
+変更をcommitし、mainへローカルmergeします。
+
+```text
+git status --short
+git add packs/php/app/public/projects/show.php reports/tutorial_fix_report.md
+git commit -m "tutorial: 案件詳細の項目名を修正"
+git switch main
+git merge --no-ff --no-edit feature/redmine-<チケット番号>-tutorial-label
+git branch -d feature/redmine-<チケット番号>-tutorial-label
+git status --short
+```
+
+最後にRedmineへ戻り、チケットへ`check tutorial: PASS`と報告ファイル名をコメントして送信し、
+**In Progress → Resolved → Closed**にします。
+
+## 7. tutorial-2 を始める
+
+開くファイル:
+
+```text
+packs/php/tickets/01_チュートリアル/tutorial-2/ticket.md
+```
+
+この課題は、「直す」ではなく「小さな部品を作る」流れを同じ手順でもう1周する練習です。
+
+Redmineで`PractiCase Ticket ID`が`tutorial-2`のチケットを開き、自分を担当者にして
+**New → In Progress**にします。前回の実績と比べた見積をコメントへ書いて送信します。
+
+送信したらVS Codeへ戻り、mainから2周目のbranchを作ります。
+
+```text
+git switch main
+git status --short
+git switch -c feature/redmine-<チケット番号>-tutorial-2-tag-summary
+```
+
+最初に読むファイル:
+
+```text
+packs/php/app/tests/checks/tutorial-2.php
+```
+
+この課題では、テストが仕様書の役割を持っています。
+4つの `test(...)` を読み、何を入力すると何が返るべきかを確認します。
+
+実装するファイル:
+
+```text
+packs/php/app/src/Support/TagSummary.php
+```
+
+TODO の中に、タグ別の件数を数える処理を書きます。
+
+実装後、check を実行します。
+
+```text
+docker compose exec app php tools/check.php tutorial-2
+```
+
+PASS したら、`reports/tutorial-2_fix_report.md` を作り、3行で報告します。
+
+```text
+作ったもの:
+工夫した点:
+check の結果:
+```
+
+変更をcommitし、mainへローカルmergeします。
+
+```text
+git status --short
+git add packs/php/app/src/Support/TagSummary.php reports/tutorial-2_fix_report.md
+git commit -m "tutorial-2: タグ別の案件数集計を実装"
+git switch main
+git merge --no-ff --no-edit feature/redmine-<チケット番号>-tutorial-2-tag-summary
+git branch -d feature/redmine-<チケット番号>-tutorial-2-tag-summary
+git status --short
+```
+
+最後にRedmineへ戻り、チケットへ`check tutorial-2: PASS`と報告ファイル名をコメントして送信し、
+**In Progress → Resolved → Closed**にします。
+
+## 8. 次に進めるか確認する
+
+次のチェックがすべて埋まれば、導入とチュートリアルは完了です。
+
+- [ ] アプリにログインできる
+- [ ] `check T-000` が PASS
+- [ ] `check tutorial` が PASS
+- [ ] `check tutorial-2` が PASS
+- [ ] `reports/` に3本の報告がある
+- [ ] T-000、tutorial、tutorial-2の変更をcommitし、mainへローカルmergeした
+- [ ] 現在のbranchがmainで、`git status --short`に何も表示されない
+- [ ] Redmineで`T-000`、`tutorial`、`tutorial-2`のチケットがClosed
+
+次に開くファイル:
+
+```text
+packs/php/tickets/02_開発の基礎/T-001_job_validation/ticket.md
+```
+
+ここから本番の学習に入ります。T-001 は `docs/00_はじめに/first-ticket-walkthrough.md` を手元に置いて進めてください。
+
+## 困ったとき
+
+| 症状 | 見る場所 |
+|---|---|
+| ファイルが見つからない | VS Code でリポジトリの一番上を開いているか確認 |
+| ポートが使えない | `PRACTICASE_PORT` を変える |
+| DB を戻したい | `docker compose exec app php tools/init-db.php` |
+| Redmine が開かない | `docs/02_作業ルール/redmine-guide.md` の「うまくいかないとき」を確認 |
+| check が FAIL | FAIL のメッセージを読み、対象ファイルと条件を確認 |
+| チュートリアル拡張が無い | 拡張なしでも ticket.md の手順で進められる |
+
+Redmineが停止している場合も学習は続けられます。その場合だけ`ticket.md`のfront matterを
+`open` → `in_progress` → `resolved` → `closed`と更新します。Redmineへは自動同期されないため、
+復旧後に必要な進捗を手動で合わせます。

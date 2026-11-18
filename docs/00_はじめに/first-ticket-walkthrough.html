@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>PractiCase 課題の進め方 — 最初の1本(T-001)完全ガイド</title>
+<style>
+body { font-family: "Yu Gothic UI", Meiryo, sans-serif; color: #222; line-height: 1.7; max-width: 800px; margin: 24px auto; padding: 0 16px; }
+h1 { font-size: 1.4rem; border-bottom: 2px solid #1f3a5f; padding-bottom: 6px; }
+h2 { font-size: 1.15rem; background: #eef1f5; padding: 6px 10px; margin-top: 28px; }
+h3 { font-size: 1rem; border-left: 4px solid #1f6feb; padding-left: 8px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+th, td { border: 1px solid #bbb; padding: 6px 9px; text-align: left; font-size: 0.92rem; }
+th { background: #f2f4f7; }
+code { background: #f0f2f5; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f0f2f5; padding: 10px 12px; border-radius: 4px; overflow-x: auto; }
+ul, ol { padding-left: 22px; }
+.note { background: #eef4ff; border: 1px solid #cddcf5; border-radius: 5px; padding: 8px 12px; font-size: 0.92rem; }
+@media print { body { max-width: none; margin: 0; } h2 { page-break-after: avoid; } }
+</style>
+</head>
+<body>
+<h1>PractiCase 課題の進め方 — 最初の1本(T-001)完全ガイド</h1>
+<p class="note">この文書は印刷するか、ブラウザで開いたままにして使います(印刷/PDF化: Ctrl+P)。<br>
+VS Code はコードの作業に集中してください。T-002以降の本番課題もRedmineから始めて同じ流れで進みます。<br>
+肩慣らしのチュートリアル2本(tutorial → tutorial-2)をまだ終えていない人は、先に進めてください(2本合わせて約70分)。</p>
+<p class="note"><strong>チュートリアルとの違い</strong>: tutorialとtutorial-2は、ブランチ作成・commit・mainへのローカルmergeまでを練習します。Pull Requestを含む提出手順は、このT-001から始まります。</p>
+<p class="note"><strong>パスの読み方</strong>: この文書に出てくるファイルパスは、すべてリポジトリの一番上(README.md がある階層)からの相対表記です。ファイルを探すときは VS Code で <strong>Ctrl+P</strong> を押してファイル名(例: features.md)を入力するのが最速です。見つからないときは、VS Code で開いているフォルダがリポジトリの一番上になっているか確認してください(下位フォルダを開くと検索範囲外になります)。</p>
+
+<h2>T-001以降の本番課題で使う流れ</h2>
+<table>
+<tr><th>#</th><th>やること</th><th>使うもの</th></tr>
+<tr><td>1</td><td>Redmineで課題を選び、対応するチケットを読む</td><td>Redmine / packs/php/tickets/&lt;章&gt;/&lt;課題&gt;/ticket.md</td></tr>
+<tr><td>2</td><td>担当者・見積・In Progressを記録する</td><td>Redmine / retrospectiveテンプレの「見積」欄</td></tr>
+<tr><td>3</td><td>ブランチを切る(=着手の宣言)</td><td>git switch -c feature/redmine-&lt;チケット番号&gt;-&lt;課題ID&gt;-&lt;短い名前&gt;</td></tr>
+<tr><td>4</td><td>仕様書を読む</td><td>support/spec.md → docs/01_設計資料/ の該当節</td></tr>
+<tr><td>5</td><td>症状を再現する</td><td>ブラウザ(アプリ)</td></tr>
+<tr><td>6</td><td>コードを読み、直す</td><td>VS Code</td></tr>
+<tr><td>7</td><td>チェックを実行する</td><td>docker compose exec app php tools/check.php &lt;課題ID&gt;</td></tr>
+<tr><td>8</td><td>提出する</td><td>Pull Request(本文: docs/templates/fix_report.md)</td></tr>
+<tr><td>9</td><td>セルフレビュー</td><td>support/rubric.md(debrief がある課題は提出後に突き合わせ)</td></tr>
+<tr><td>10</td><td>振り返り → Closed</td><td>docs/templates/retrospective.md → reports/ / Redmine</td></tr>
+</table>
+<p class="note"><strong>fallback</strong>: Redmineが使えない場合だけ、ticket.mdのfront matterをopen → in_progress → resolved → closedと更新します。通常はfront matterを変更しません。check結果は自動同期されないため、自分でRedmineへコメントします。</p>
+
+<h2>T-001 の歩き方</h2>
+
+<h3>手順1: Redmineからチケットを読む(約5分)</h3>
+<ul>
+<li>RedmineのPractiCaseプロジェクトで、<code>PractiCase Ticket ID = T-001</code>のチケットを開く</li>
+<li>対応するファイル: <code>packs/php/tickets/02_開発の基礎/T-001_job_validation/ticket.md</code></li>
+<li>4箇所に印を付ける: ①症状(3つ) ②期待動作 ③調査の入口 ④完了条件</li>
+<li>チケットは「起きていること」と「あるべき姿」のペアで読みます。この差を埋めるのが作業です</li>
+</ul>
+
+<h3>手順2〜3: Redmineで着手し、ブランチを作る</h3>
+<ul>
+<li>Redmineで自分を担当者に設定し、見積をコメントして送信し、ステータスを<code>New</code> → <code>In Progress</code>にする</li>
+<li>あわせて <code>docs/templates/retrospective.md</code> を <code>reports/T-001_retrospective.md</code> にコピーし、<strong>「見積」の欄だけ</strong>先に書く(自分の読みで何分か+内訳。estimated_minutes を見る前に書くのがおすすめ — 完了後に答え合わせする)</li>
+<li>RedmineのURLが<code>/issues/3</code>ならチケット番号は3。<code>git switch main</code>の後、<code>git switch -c feature/redmine-3-T-001-validation</code>を実行する。fallback時は<code>feature/T-001-validation</code>を使う</li>
+</ul>
+
+<h3>手順4: 仕様書を読む(約10分)</h3>
+<ul>
+<li><code>support/spec.md</code> が指す <code>docs/01_設計資料/features.md</code> の <strong>F-02</strong> を開く</li>
+<li>「入力項目と検証ルール」の表を手元にチェックリストとして書き写す(項目/ルール/エラーメッセージ)</li>
+<li>仕様書は通読するものではなく、実装と突き合わせる道具です</li>
+</ul>
+
+<h3>手順5: 症状を再現する(約10分)</h3>
+<ol>
+<li><code>docker compose up -d</code>(未起動の場合)</li>
+<li>ブラウザで <code>http://localhost:8180/login.php</code> → クイックログインで「田淵(クライアント)」</li>
+<li>「案件を登録する」でチケットの症状の値(時間単価にマイナスなど)を入力して登録する</li>
+<li><strong>登録が通ってしまう</strong>ことを確認し、どの値が通ったかをメモする</li>
+</ol>
+<p class="note">修正の前に再現するのは、修正後に「直った」と判定する基準を作るためです。</p>
+
+<h3>手順6: コードを読み、直す(約30分)</h3>
+<ol>
+<li>画面の URL(<code>/client/project_new.php</code>)と public/ 配下のファイルが対応します</li>
+<li><code>packs/php/app/public/client/project_new.php</code> を開く(入口。判断はしていない)</li>
+<li>その中で use / new されているクラスを辿ると、検証を担当するクラス(<code>src/Service/</code> 内)に着きます</li>
+<li>手順4の表と実装を1項目ずつ照合し、仕様にあって実装に無いチェックを特定する(症状の3つ以外の漏れも確認)</li>
+<li>修正は、同じクラス内で正しく検証できている項目の書き方に合わせる。日時を扱う場合は coding-rules の <strong>ARC-5</strong> を先に読む</li>
+</ol>
+<ul>
+<li>構造が分からなくなったら: <code>docs/03_参考資料/code-tour.md</code>(層の地図と処理の流れ)</li>
+<li>設計資料は必要な箇所だけ開く。この課題で主に見るのは <code>docs/01_設計資料/features.md</code> の <strong>F-02</strong>(テーブル定義は database.md、画面遷移は screens.md にあるが T-001 では通常不要)</li>
+<li>15分考えて進めなくなったら: <code>tickets/02_開発の基礎/T-001_job_validation/support/hints.md</code> を1段ずつ</li>
+</ul>
+
+<h3>手順7: チェック(修正の前後で2回)</h3>
+<pre>docker compose exec app php tools/check.php T-001</pre>
+<ul>
+<li>修正<strong>前</strong>に1回: 課題別テストの FAIL を確認(症状のテスト版)</li>
+<li>修正<strong>後</strong>に1回: PASS を確認。あわせて <code>git diff</code> で余計な変更が無いかを見る</li>
+</ul>
+
+<h3>手順8〜10: 提出・セルフレビュー・振り返り</h3>
+<ol>
+<li>コミット → Pull Requestを作成。<strong>具体的な手順はdocs/02_作業ルール/git-and-pr-guide.md</strong>(push・PR画面・セルフマージまで)。本文はfix_reportテンプレートで原因を自分の言葉で書く。PASSと提出物名をRedmineへコメントし、In Progress → Resolvedにする</li>
+<li>support/rubric.md の観点でセルフレビュー</li>
+<li>振り返り: reportsフォルダに<code>T-001_retrospective.md</code>を作り、retrospectiveテンプレートを埋める。書き終えたらRedmineをResolved → Closedにして完了</li>
+</ol>
+
+<h2>以降の課題への適用</h2>
+<ul>
+<li>T-002以降も本番課題の共通10ステップは同じ。変わるのは各課題フォルダの中身(症状・仕様の参照先・scope)だけ</li>
+<li>詰まったら各課題の support/hints.md(15分粘ってから1段ずつ)</li>
+<li>レビュー・テスト設計・報告系の課題は、コード修正の代わりに reports/ へ提出物を書き、提出後に debrief/ と突き合わせる</li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,67 @@
+# PractiCase CI — あなた自身のリポジトリの GitHub Actions 無料枠で動く。
+# secrets・外部サービス・有料 API は一切使わない。
+# 実行内容はローカルの正式コマンドと同じなので、CI が使えない環境(ZIP 運用など)でも
+# 学習は docs/02_作業ルール/workflow.md の手順どおりローカルだけで完結する。
+name: PractiCase check
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'reports/**'   # 報告書だけの変更ではテスト対象が変わらないため動かさない(無料枠の節約)
+  pull_request:
+    paths-ignore:
+      - 'reports/**'
+
+# 同じブランチで連続 push したとき、古い実行を打ち切って無料枠を守る
+concurrency:
+  group: practicase-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: アプリ起動と共通テスト
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: リポジトリを取得(scope 検査用に全履歴)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: アプリ環境を起動
+        run: docker compose up -d --build
+
+      - name: DB を初期化
+        run: docker compose exec -T app php tools/init-db.php
+
+      - name: 共通テストを実行(既存機能を壊していないか)
+        run: docker compose exec -T app php packs/php/app/tests/run.php
+
+      # 配布台帳(dist.php / dist-verify.php / build-light.php)の整合検査。
+      # Master 判定は tools/dist.php の存在で行う — 配布ツール一式は配布物に入らないため
+      # Master でだけ真になる。内部資料フォルダ名での判定は、この yml 自身が配布物へ
+      # 入る際に禁止語検査(内部参照の漏洩検知)へ当たるため使えない(実測済み)。
+      # Master でツールが欠けていたら FAIL — 「台帳検査を消す変更」自身を検出する
+      - name: 配布台帳の整合検証(Master では必須・配布物側は skip)
+        run: |
+          if [ -f tools/dist.php ]; then
+            test -f tools/verify-distribution-manifests.php || {
+              echo "error: Master用の配布台帳検証ツールがありません"
+              exit 1
+            }
+            docker compose exec -T app php tools/verify-distribution-manifests.php
+          else
+            echo "skip: 配布物側"
+          fi
+
+      - name: セットアップ状態の確認(main への push 時のみ)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker compose exec -T app php tools/check.php T-000
+
+      - name: 環境を停止
+        if: always()
+        run: docker compose down
